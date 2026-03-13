@@ -22,16 +22,23 @@ body {
     backdrop-filter: blur(2px);
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
     border-radius: 20px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
     position: relative;
     z-index: 1;
     transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .site-header {
+    max-width: 1050px;
+    margin: 0 auto;
     padding: 20px 0 30px;
     border-bottom: 2px solid #b38f7a;
-    margin-bottom: 30px;
     text-align: center;
+    border-radius: 20px;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    background-color: #faf3e8dd;
     transition: border-color 0.3s ease;
 }
 
@@ -510,6 +517,12 @@ body.dark-theme {
 
 body.dark-theme .wrapper {
     background-color: #2d2d2d;
+    color: #e0e0e0;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+body.dark-theme .site-header{
+        background-color: #2d2d2d;
     color: #e0e0e0;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }

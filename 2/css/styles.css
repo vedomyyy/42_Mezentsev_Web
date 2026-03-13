@@ -21,15 +21,22 @@ body {
     backdrop-filter: blur(2px);
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
     border-radius: 20px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
     position: relative;
     z-index: 1;
 }
 
 /* ШАПКА */
 .site-header {
-    padding: 20px 0 30px;
+    padding: 20px 20px 30px;
     border-bottom: 2px solid #b38f7a;
-    margin-bottom: 30px;
+    margin: 0 auto;
+    border-radius: 20px;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius:0;
+    background-color: #faf3e8dd;
+    max-width: 1050px;
     text-align: center;
 }
 
@@ -305,7 +312,7 @@ body {
 }
 
 .ad-left {
-    left: -220px;
+    left: -200px;
     top: 150px;
 }
 
@@ -332,7 +339,7 @@ body {
 }
 
 .ad-gif {
-    width: 105%;
+    width: 100%;
     height: 150px;
     object-fit: cover;
     border-radius: 15px;

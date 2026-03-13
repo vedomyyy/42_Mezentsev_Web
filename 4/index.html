@@ -5,14 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ShitTalker67 - посри за спасибо</title>
     <link rel="stylesheet" href="css/styles.css">
+    <script src="js/cookie.js"></script>
     <script src="js/script.js"></script>
 </head>
 <body>
         <main class="wrapper">
+            
             <header class="site-header">
-                <h1>ShitTalker67 <span>посри за спасибо</span></h1>
-                <p class="subhead">Унитаз, который <span>поддержит любой разговор</span></p>
+            <h1>ShitTalker67 <span>посри за спасибо</span></h1>
+            <p class="subhead">Унитаз, который <span>поддержит любой разговор</span></p>
             </header>
+            
+            <button class="theme-toggle" id="themeToggle" aria-label="Переключить тему">🌙</button>
+            
             <section class="toilet-section" aria-labelledby="toilet-heading">
                 <div class="trigger-zone" id="triggerZone"></div>
 
@@ -57,37 +62,43 @@
                 </div>
             </section>
 
+            
             <section class="reviews">
-                <h2>Отзывы счастливых обладателей</h2>
-                
-                <div class="reviews-grid">
-                    <article class="review-item">
-                        <blockquote>
-                            <p>«Сынок боялся ходить один в туалет, он больше не ходит вообще!!!»</p>
-                        </blockquote>
-                        <footer class="review-author">— Елена</footer>
-                    </article>
-                    
-                    <article class="review-item">
-                        <blockquote>
-                            <p>«Доктор сказал, что жидкий стул это плохо, а вот моему новому другу нравится»</p>
-                        </blockquote>
-                        <footer class="review-author">— Дмитрий</footer>
-                    </article>
-                    
-                    <article class="review-item">
-                        <blockquote>
-                            <p>«Знаете, после родов я обсиралась по-страшному, и муж, слыша это, осуждал меня. Но с этим унитазом я перестала стесняться. Муж ушел.»</p>
-                        </blockquote>
-                        <footer class="review-author">— Варвара</footer>
-                    </article>
-                    
-                    <article class="review-item">
-                        <blockquote>
-                            <p>«Выдавил прямую кишку, а унитазу понравилось, спасибо!!!!»</p>
-                        </blockquote>
-                        <footer class="review-author">— Кирилл</footer>
-                    </article>
+    <h2>Отзывы счастливых обладателей</h2>
+    
+    <div class="reviews-grid" id="reviewsContainer">
+    </div>
+    
+    <div class="review-form-container">
+        <h3>Оставьте свой отзыв</h3>
+        <form id="reviewForm" class="review-form">
+            <div class="form-group">
+                <label for="reviewName">Ваше имя:</label>
+                <input type="text" id="reviewName" name="name" placeholder="Введите имя" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="reviewText">Ваш отзыв:</label>
+                <textarea id="reviewText" name="text" placeholder="Введите текст отзыва" required></textarea>
+            </div>
+            
+            <!-- Доп: загрузка изображения -->
+            <div class="form-group">
+                <label for="reviewImage">Изображение (необязательно):</label>
+                <input type="file" id="reviewImage" name="image" accept="image/*">
+                <div class="image-preview" id="imagePreview"></div>
+            </div>
+            
+            <button type="submit" class="submit-review">Добавить отзыв</button>
+        </form>
+    </div>
+</section>
+
+            <section class="order-section">
+                <div class="order-container">
+                    <h2 class="order-title">Хочешь такого же друга?</h2>
+                    <p class="order-text">Закажи унитаз ShitTalker67 прямо сейчас и получи скидку 50% на первое говно!</p>
+                    <button class="order-button" id="orderButton">ЗАКАЗАТЬ</button>
                 </div>
             </section>
             
@@ -151,14 +162,6 @@
             <button class="ad-button">Купить</button>
         </article>
     </aside>
-
-            <section class="order-section">
-                <div class="order-container">
-                    <h2 class="order-title">Хочешь такого же друга?</h2>
-                    <p class="order-text">Закажи унитаз ShitTalker67 прямо сейчас и получи скидку 50% на первое говно!</p>
-                    <button class="order-button" id="orderButton">ЗАКАЗАТЬ</button>
-                </div>
-            </section>
         </main>
 
         <footer class="site-footer">

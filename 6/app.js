@@ -121,14 +121,24 @@ document.getElementById('main-nav').addEventListener('click', e => {
 let allThreads = [];
 let threadPage = 1;
 const PER_PAGE = 8;
+const threadViews    = {};
+const threadComments = {};
+let isLoadingThreads = false;
 
 async function loadThreads() {
+  if (isLoadingThreads) return;
+  isLoadingThreads = true;
+  // Блокируем кнопку публикации на время загрузки
+  const publishBtn = document.querySelector('.btn-lime[onclick="createThread()"]');
+  if (publishBtn) { publishBtn.disabled = true; publishBtn.textContent = '⏳ Загрузка…'; }
   document.getElementById('threads-list').innerHTML = skeletonThreads(5);
   setStatus('threads-status', 'loading', 'Загружаем обсуждения… GET /posts');
   try {
     const raw = await fetchJSON(`${BASE}/posts`);
     allThreads = raw.map((p, i) => {
       const tpl = RU_THREADS[i % RU_THREADS.length];
+      threadViews[p.id]    = 0;
+      threadComments[p.id] = 0;
       return {
         ...p,
         title:    tpl.title,
@@ -147,6 +157,10 @@ async function loadThreads() {
   } catch (e) {
     setStatus('threads-status', 'error', 'Не удалось загрузить. Проверьте соединение.');
     document.getElementById('threads-list').innerHTML = `<div class="empty-state"><span class="empty-icon">⚡</span><div class="empty-title">Сервер не отвечает</div><div class="empty-sub">Попробуйте обновить страницу</div></div>`;
+  } finally {
+    isLoadingThreads = false;
+    const publishBtn = document.querySelector('.btn-lime[onclick="createThread()"]');
+    if (publishBtn) { publishBtn.disabled = false; publishBtn.textContent = '⚡ Опубликовать'; }
   }
 }
 
@@ -180,15 +194,15 @@ function renderThreads() {
         </div>
         <div class="thread-body thread-clickable" onclick="openThread(${t.id})">
           <div class="thread-meta">
-            <span class="thread-author">${t.author}</span>
-            <span class="thread-time">${TIME_AGO[t.id % 10]}</span>
+            <span class="thread-author">${t.author || 'Аноним'}</span>
+            <span class="thread-time">${t.timeLabel || TIME_AGO[t.id % TIME_AGO.length]}</span>
             <span class="thread-tag tag-${t.tag}">${t.tagLabel}</span>
           </div>
           <div class="thread-title">${t.title}</div>
           <div class="thread-preview">${t.body}</div>
           <div class="thread-footer">
-            <span class="thread-stat">💬 ${(t.id * 3) % 28 + 1} комментариев</span>
-            <span class="thread-stat">👁 ${(t.id * 17) % 500 + 50} просмотров</span>
+            <span class="thread-stat">💬 ${threadComments[t.id] || 0} комментариев</span>
+            <span class="thread-stat">👁 ${threadViews[t.id] || 0} просмотров</span>
           </div>
         </div>
         <div class="thread-actions">
@@ -221,6 +235,7 @@ function vote(id, delta) {
 }
 
 async function createThread() {
+  if (isLoadingThreads) { setStatus('threads-status', 'error', 'Подождите окончания загрузки'); return; }
   const title = document.getElementById('new-title').value.trim();
   const body  = document.getElementById('new-body').value.trim();
   const tag   = document.getElementById('new-tag').value;
@@ -233,7 +248,13 @@ async function createThread() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title, body, userId: Math.ceil(Math.random() * 10) }),
     });
-    allThreads.unshift({ ...data, id: Date.now(), title, body, tag, tagLabel: tagLabels[tag], votes: 0 });
+    const newId = Date.now();
+    threadViews[newId]    = 0;
+    threadComments[newId] = 0;
+    const authorName = myProfile ? myProfile.name : 'Вы';
+    allThreads.unshift({ ...data, id: newId, title, body, tag, tagLabel: tagLabels[tag], votes: 0, author: authorName, timeLabel: 'только что' });
+    // Добавляем в myThreads чтобы тред появился в профиле
+    myThreads.unshift({ id: newId, title, body, tag, tagLabel: tagLabels[tag], votes: 0, timeLabel: 'только что' });
     document.getElementById('new-title').value = '';
     document.getElementById('new-body').value  = '';
     threadPage = 1; newsPage = 1;
@@ -399,9 +420,9 @@ function renderNews() {
 
   // Статистика
   stats('news-stats', [
-    { icon: '📰', value: total,                                         label: 'новостей' },
-    { icon: '🔥', value: Math.max(...newsList.map(t => t.votes)),       label: 'макс. голосов' },
-    { icon: '💬', value: newsList.reduce((s,t) => s + (t.id*3)%28+1, 0), label: 'комментариев' },
+    { icon: '📰', value: total, label: 'новостей' },
+    { icon: '🔥', value: newsList.length ? Math.max(...newsList.map(t => t.votes)) : 0, label: 'макс. голосов' },
+    { icon: '💬', value: newsList.reduce((s,t) => s + (threadComments[t.id] || 0), 0), label: 'комментариев' },
   ]);
 
   if (!slice.length) {
@@ -419,15 +440,15 @@ function renderNews() {
       </div>
       <div class="thread-body thread-clickable" onclick="openThread(${t.id})">
         <div class="thread-meta">
-          <span class="thread-author">${t.author}</span>
-          <span class="thread-time">${TIME_AGO[t.id % 10]}</span>
+          <span class="thread-author">${t.author || 'Аноним'}</span>
+          <span class="thread-time">${t.timeLabel || TIME_AGO[t.id % TIME_AGO.length]}</span>
           <span class="thread-tag tag-news">Новость</span>
         </div>
         <div class="thread-title">${t.title}</div>
         <div class="thread-preview">${t.body}</div>
         <div class="thread-footer">
-          <span class="thread-stat">💬 ${(t.id * 3) % 28 + 1} комментариев</span>
-          <span class="thread-stat">👁 ${(t.id * 17) % 500 + 50} просмотров</span>
+          <span class="thread-stat">💬 ${threadComments[t.id] || 0} комментариев</span>
+          <span class="thread-stat">👁 ${threadViews[t.id] || 0} просмотров</span>
         </div>
       </div>
     </div>`).join('');
@@ -465,20 +486,14 @@ async function loadProfile() {
       <div class="skeleton" style="width:220px;height:13px;border-radius:6px"></div>
     </div>`;
   try {
-    const [rawUser, rawPosts] = await Promise.all([
-      fetchJSON(`${BASE}/users/${MY_USER_ID}`),
-      fetchJSON(`${BASE}/posts?userId=${MY_USER_ID}`),
-    ]);
+    const rawUser = await fetchJSON(`${BASE}/users/${MY_USER_ID}`);
 
     myProfile = { ...rawUser, name: RU_NAMES[0], role: RU_ROLES[0], city: RU_CITIES[0] };
-    myThreads = rawPosts.map((p, i) => ({
-      ...p,
-      title:    RU_THREADS[i % RU_THREADS.length].title,
-      body:     RU_THREADS[i % RU_THREADS.length].body,
-      tag:      RU_THREADS[i % RU_THREADS.length].tag,
-      tagLabel: RU_THREADS[i % RU_THREADS.length].tagLabel,
-      votes:    RU_THREADS[i % RU_THREADS.length].votes,
-    }));
+    // myThreads = треды созданные пользователем через форму (уже есть в массиве)
+    // + подгружаем из allThreads те что принадлежат userId=1 если пользователь ещё не создавал своих
+    if (!myThreads.length && allThreads.length) {
+      myThreads = allThreads.filter(t => t.userId === MY_USER_ID);
+    }
     renderProfile();
     setStatus('profile-status', '', '');
   } catch (e) {
@@ -508,14 +523,18 @@ function renderProfile() {
     { icon: '🏙️', value: myProfile.city, label: '' },
   ]);
 
-  document.getElementById('profile-threads-count').textContent = `${myThreads.length} тредов`;
+  const threadsHeader = document.querySelector('.profile-threads-header');
+  const threadsCount  = document.getElementById('profile-threads-count');
+  const threadsList   = document.getElementById('profile-threads');
+  if (threadsHeader) threadsHeader.style.display = '';
+  if (threadsList)   threadsList.style.display   = '';
+  if (threadsCount)  threadsCount.textContent     = `${myThreads.length} тредов`;
 
-  const list = document.getElementById('profile-threads');
   if (!myThreads.length) {
-    list.innerHTML = `<div class="empty-state"><span class="empty-icon">📭</span><div class="empty-title">Тредов пока нет</div><div class="empty-sub">Напишите первый!</div></div>`;
+    threadsList.innerHTML = `<div class="empty-state"><span class="empty-icon">📭</span><div class="empty-title">Тредов пока нет</div><div class="empty-sub">Напишите первый!</div></div>`;
     return;
   }
-  list.innerHTML = myThreads.map(t => `
+  threadsList.innerHTML = myThreads.map(t => `
     <div class="thread-card tag-${t.tag}">
       <div class="thread-votes">
         <div class="vote-count">${t.votes}</div>
@@ -523,13 +542,13 @@ function renderProfile() {
       <div class="thread-body thread-clickable" onclick="openThread(${t.id})">
         <div class="thread-meta">
           <span class="thread-tag tag-${t.tag}">${t.tagLabel}</span>
-          <span class="thread-time">${TIME_AGO[t.id % 10]}</span>
+          <span class="thread-time">${t.timeLabel || TIME_AGO[t.id % TIME_AGO.length]}</span>
         </div>
         <div class="thread-title">${t.title}</div>
         <div class="thread-preview">${t.body}</div>
         <div class="thread-footer">
-          <span class="thread-stat">💬 ${(t.id * 3) % 28 + 1} комментариев</span>
-          <span class="thread-stat">👁 ${(t.id * 17) % 500 + 50} просмотров</span>
+          <span class="thread-stat">💬 ${threadComments[t.id] || 0} комментариев</span>
+          <span class="thread-stat">👁 ${threadViews[t.id] || 0} просмотров</span>
         </div>
       </div>
     </div>`).join('');
@@ -545,8 +564,17 @@ function openProfileEdit() {
   document.getElementById('edit-member-modal').classList.remove('hidden');
 }
 
+let isSavingMember = false;
+
 const _origSave = saveEditMember;
 saveEditMember = async function() {
+  if (isSavingMember) return;
+  isSavingMember = true;
+
+  // Блокируем кнопку сохранения
+  const saveBtn = document.querySelector('#edit-member-modal .btn-violet');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Сохраняем…'; }
+
   const id    = document.getElementById('edit-member-id').value;
   const name  = document.getElementById('edit-member-name').value.trim();
   const email = document.getElementById('edit-member-email').value.trim();
@@ -575,6 +603,10 @@ saveEditMember = async function() {
     setStatus(sid, 'success', 'Сохранено ✓');
     setTimeout(() => setStatus(sid, '', ''), 3000);
   } catch (e) { setStatus(sid, 'error', 'Ошибка: ' + e.message); }
+  finally {
+    isSavingMember = false;
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Сохранить'; }
+  }
 };
 
 loadThreads();
@@ -606,12 +638,17 @@ function openThread(id) {
   document.getElementById('tp-tag').className   = `tp-tag thread-tag tag-${t.tag}`;
   document.getElementById('tp-tag').textContent = t.tagLabel;
   document.getElementById('tp-title').textContent  = t.title;
-  document.getElementById('tp-author').textContent = t.author || RU_NAMES[(t.userId - 1) % 10];
-  document.getElementById('tp-time').textContent   = TIME_AGO[t.id % 10];
+  document.getElementById('tp-author').textContent = t.author || RU_NAMES[(t.userId - 1) % 10] || 'Аноним';
+  document.getElementById('tp-time').textContent   = t.timeLabel || TIME_AGO[t.id % TIME_AGO.length];
   document.getElementById('tp-body').textContent   = t.body;
   document.getElementById('tp-votes').textContent  = t.votes;
   document.getElementById('tp-post-id').value      = t.id;
   document.getElementById('tp-comment-input').value = '';
+
+  // +1 просмотр
+  threadViews[t.id] = (threadViews[t.id] || 0) + 1;
+  renderThreads();
+  renderNews();
 
   document.getElementById('thread-panel').classList.add('open');
   document.getElementById('tp-overlay').classList.add('open');
@@ -673,6 +710,12 @@ async function postComment() {
     });
     const list = document.getElementById('tp-comments-list');
     const noMsg = list.querySelector('.tp-no-comments');
+    // +1 комментарий
+    const postIdNum = Number(postId);
+    threadComments[postIdNum] = (threadComments[postIdNum] || 0) + 1;
+    renderThreads();
+    renderNews();
+    if (myThreads.find(t => t.id === postIdNum)) renderProfile();
     if (noMsg) noMsg.remove();
     const div = document.createElement('div');
     div.className = 'tp-comment tp-comment-new';
